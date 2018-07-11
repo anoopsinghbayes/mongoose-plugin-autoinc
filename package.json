@@ -71,6 +71,7 @@
     "build-ts": "find ./src -name '*.d.ts' -not -path '*/__*' | while read filepath; do cp $filepath `echo $filepath | sed 's/\\/src\\//\\/lib\\//g'`; done",
     "build-ts-sh": "sh build-ts.sh",
     "watch": "jest --watch",
+    "local:test": "jest ./src/__tests__/index-test.js --watch",
     "coverage": "jest --coverage --maxWorkers 2",
     "lint": "npm run eslint && npm run tslint && npm run tscheck",
     "tslint": "tslint -p . \"src/**/*.d.ts\"",

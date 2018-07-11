@@ -1,8 +1,8 @@
 // @flow
 
-import mongoose from 'mongoose';
-import MongodbMemoryServer from 'mongodb-memory-server';
-import { autoIncrement } from '..';
+import mongoose from "mongoose";
+// import MongodbMemoryServer from "mongodb-memory-server";
+import { autoIncrement } from "..";
 
 // May require additional time for downloading MongoDB binaries
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 60000;
@@ -10,32 +10,35 @@ mongoose.Promise = global.Promise;
 
 let mongoServer;
 let connection;
+let connection1;
+const dataBase1 = "test1";
 // const opts = { useMongoClient: true };
 
 beforeAll(async () => {
-  mongoServer = new MongodbMemoryServer();
-  const mongoUrl = await mongoServer.getConnectionString();
+  // mongoServer = new MongodbMemoryServer();
+  const mongoUrl = "mongodb://localhost:27017/test";
 
   connection = await mongoose
     .createConnection(mongoUrl, {
       autoReconnect: true,
       reconnectInterval: 100,
-      reconnectTries: Number.MAX_VALUE,
+      reconnectTries: Number.MAX_VALUE
     })
+
     // $FlowFixMe
     .catch(() => {});
-  // connection.on('error', (...args) => console.error(...args));
+  connection1 = connection.useDb(dataBase1);
 });
 
 afterAll(() => {
   mongoose.disconnect();
-  mongoServer.stop();
+  // mongoServer.stop();
 });
 
 afterEach(async () => {
   if (connection.models.User) {
     await connection
-      .model('User')
+      .model("User")
       .collection.drop()
       .catch(() => {});
     delete connection.models.User;
@@ -43,24 +46,38 @@ afterEach(async () => {
 
   if (connection.models.IdentityCounter) {
     await connection
-      .model('IdentityCounter')
+      .model("IdentityCounter")
+      .collection.drop()
+      .catch(() => {});
+  }
+  if (connection1.models.User) {
+    await connection1
+      .model("User")
+      .collection.drop()
+      .catch(() => {});
+    delete connection.models.User;
+  }
+
+  if (connection1.models.IdentityCounter) {
+    await connection1
+      .model("IdentityCounter")
       .collection.drop()
       .catch(() => {});
   }
 });
 
-describe('mongoose-auto-increment', () => {
-  it('increment the _id field on validate', async () => {
+describe("mongoose-auto-increment", () => {
+  it("increment the _id field on validate", async () => {
     const UserSchema = new mongoose.Schema({
       name: String,
-      dept: String,
+      dept: String
     });
-    UserSchema.plugin(autoIncrement, 'User');
-    const User = connection.model('User', UserSchema);
+    UserSchema.plugin(autoIncrement, "User");
+    const User = connection.model("User", UserSchema);
     await User.ensureIndexes();
 
-    const user1 = new User({ name: 'Charlie', dept: 'Support' });
-    const user2 = new User({ name: 'Charlene', dept: 'Marketing' });
+    const user1 = new User({ name: "Charlie", dept: "Support" });
+    const user2 = new User({ name: "Charlene", dept: "Marketing" });
 
     await user1.validate();
     await user2.validate();
@@ -69,18 +86,18 @@ describe('mongoose-auto-increment', () => {
     expect(user2._id).toBe(1);
   });
 
-  it('increment the _id field on save', async () => {
+  it("increment the _id field on save", async () => {
     const UserSchema = new mongoose.Schema({
       name: String,
-      dept: String,
+      dept: String
     });
 
-    UserSchema.plugin(autoIncrement, 'User');
-    const User = connection.model('User', UserSchema);
+    UserSchema.plugin(autoIncrement, "User");
+    const User = connection.model("User", UserSchema);
     await User.ensureIndexes();
 
-    const user1 = new User({ name: 'Charlie', dept: 'Support' });
-    const user2 = new User({ name: 'Charlene', dept: 'Marketing' });
+    const user1 = new User({ name: "Charlie", dept: "Support" });
+    const user2 = new User({ name: "Charlene", dept: "Marketing" });
 
     await user1.save();
     await user2.save();
@@ -88,18 +105,18 @@ describe('mongoose-auto-increment', () => {
     expect(user2._id).toBe(1);
   });
 
-  it('increment the specified field instead', async () => {
+  it("increment the specified field instead", async () => {
     const UserSchema = new mongoose.Schema({
       name: String,
-      dept: String,
+      dept: String
     });
 
-    UserSchema.plugin(autoIncrement, { model: 'User', field: 'userId' });
-    const User = connection.model('User', UserSchema);
+    UserSchema.plugin(autoIncrement, { model: "User", field: "userId" });
+    const User = connection.model("User", UserSchema);
     await User.ensureIndexes();
 
-    const user1 = new User({ name: 'Charlie', dept: 'Support' });
-    const user2 = new User({ name: 'Charlene', dept: 'Marketing' });
+    const user1 = new User({ name: "Charlie", dept: "Support" });
+    const user2 = new User({ name: "Charlene", dept: "Marketing" });
 
     await user1.save();
     await user2.save();
@@ -108,18 +125,18 @@ describe('mongoose-auto-increment', () => {
     expect(user2.userId).toBe(1);
   });
 
-  it('no duplicate key errors when creating docs in parallel', async () => {
+  it("no duplicate key errors when creating docs in parallel", async () => {
     const UserSchema = new mongoose.Schema({
       name: String,
-      dept: String,
+      dept: String
     });
-    UserSchema.plugin(autoIncrement, { model: 'User', field: 'userId' });
-    const User = connection.model('User', UserSchema);
+    UserSchema.plugin(autoIncrement, { model: "User", field: "userId" });
+    const User = connection.model("User", UserSchema);
     await User.ensureIndexes();
 
-    const user1 = new User({ name: 'Charlie', dept: 'Support' });
-    const user2 = new User({ name: 'Charlene', dept: 'Marketing' });
-    const user3 = new User({ name: 'Parallel', dept: 'Something' });
+    const user1 = new User({ name: "Charlie", dept: "Support" });
+    const user2 = new User({ name: "Charlene", dept: "Marketing" });
+    const user3 = new User({ name: "Parallel", dept: "Something" });
 
     const users = [];
     users.push(user1.save());
@@ -131,18 +148,18 @@ describe('mongoose-auto-increment', () => {
     expect(results.length).toBe(3);
   });
 
-  it('start counting at specified number', async () => {
+  it("start counting at specified number", async () => {
     const UserSchema = new mongoose.Schema({
       name: String,
-      dept: String,
+      dept: String
     });
 
-    UserSchema.plugin(autoIncrement, { model: 'User', startAt: 3 });
-    const User = connection.model('User', UserSchema);
+    UserSchema.plugin(autoIncrement, { model: "User", startAt: 3 });
+    const User = connection.model("User", UserSchema);
     await User.ensureIndexes();
 
-    const user1 = new User({ name: 'Charlie', dept: 'Support' });
-    const user2 = new User({ name: 'Charlene', dept: 'Marketing' });
+    const user1 = new User({ name: "Charlie", dept: "Support" });
+    const user2 = new User({ name: "Charlene", dept: "Marketing" });
 
     await user1.save();
     await user2.save();
@@ -151,47 +168,47 @@ describe('mongoose-auto-increment', () => {
     expect(user2._id).toBe(4);
   });
 
-  it('increment by the specified amount', async () => {
+  it("increment by the specified amount", async () => {
     const UserSchema = new mongoose.Schema({
       name: String,
-      dept: String,
+      dept: String
     });
-    UserSchema.plugin(autoIncrement, { model: 'User', incrementBy: 5 });
-    const User = connection.model('User', UserSchema);
+    UserSchema.plugin(autoIncrement, { model: "User", incrementBy: 5 });
+    const User = connection.model("User", UserSchema);
     await User.ensureIndexes();
 
-    const user1 = new User({ name: 'Charlie', dept: 'Support' });
-    const user2 = new User({ name: 'Charlene', dept: 'Marketing' });
+    const user1 = new User({ name: "Charlie", dept: "Support" });
+    const user2 = new User({ name: "Charlene", dept: "Marketing" });
 
     await user1.save();
     await user2.save();
 
     expect(() => {
       UserSchema.plugin(autoIncrement);
-    }).toThrowError('model must be set');
+    }).toThrowError("model must be set");
 
     expect(user1._id).toBe(0);
     expect(user2._id).toBe(5);
   });
 
-  describe('with incrementor groups', () => {
-    it('increment the specified field within the groupingField instead', async () => {
+  describe("with incrementor groups", () => {
+    it("increment the specified field within the groupingField instead", async () => {
       const UserSchema = new mongoose.Schema({
         name: String,
-        dept: String,
+        dept: String
       });
       UserSchema.plugin(autoIncrement, {
-        model: 'User',
-        field: 'userId',
-        groupingField: 'dept',
+        model: "User",
+        field: "userId",
+        groupingField: "dept"
       });
-      const User = connection.model('User', UserSchema);
+      const User = connection.model("User", UserSchema);
       await User.ensureIndexes();
 
-      const user1 = new User({ name: 'Charlie', dept: 'Support' });
-      const user2 = new User({ name: 'Charlene', dept: 'Marketing' });
-      const user3 = new User({ name: 'John', dept: 'Support' });
-      const user4 = new User({ name: 'John', dept: 'Marketing' });
+      const user1 = new User({ name: "Charlie", dept: "Support" });
+      const user2 = new User({ name: "Charlene", dept: "Marketing" });
+      const user3 = new User({ name: "John", dept: "Support" });
+      const user4 = new User({ name: "John", dept: "Marketing" });
 
       await user1.save();
       await user2.save();
@@ -204,37 +221,37 @@ describe('mongoose-auto-increment', () => {
       expect(user4.userId).toBe(1);
     });
 
-    it('should not allow grouping fields with _id as the field', async () => {
+    it("should not allow grouping fields with _id as the field", async () => {
       const UserSchema = new mongoose.Schema({
         name: String,
-        dept: String,
+        dept: String
       });
 
       try {
         UserSchema.plugin(autoIncrement, {
-          model: 'User',
-          groupingField: 'dept',
+          model: "User",
+          groupingField: "dept"
         });
       } catch (err) {
         expect(err.message).toBe(
-          'Cannot use a grouping field with _id, choose a different field name.'
+          "Cannot use a grouping field with _id, choose a different field name."
         );
       }
     });
   });
 
-  describe('nextCount() helper function', () => {
-    it('nextCount should return the next count from document', async () => {
+  describe("nextCount() helper function", () => {
+    it("nextCount should return the next count from document", async () => {
       const UserSchema = new mongoose.Schema({
         name: String,
-        dept: String,
+        dept: String
       });
-      UserSchema.plugin(autoIncrement, 'User');
-      const User = connection.model('User', UserSchema);
+      UserSchema.plugin(autoIncrement, "User");
+      const User = connection.model("User", UserSchema);
       await User.ensureIndexes();
 
-      const user1 = new User({ name: 'Charlie', dept: 'Support' });
-      const user2 = new User({ name: 'Charlene', dept: 'Marketing' });
+      const user1 = new User({ name: "Charlie", dept: "Support" });
+      const user2 = new User({ name: "Charlene", dept: "Marketing" });
 
       const count1 = await user1.nextCount();
       await user1.save();
@@ -249,17 +266,17 @@ describe('mongoose-auto-increment', () => {
       expect(count3).toBe(2);
     });
 
-    it('nextCount should return the next count from model', async () => {
+    it("nextCount should return the next count from model", async () => {
       const UserSchema = new mongoose.Schema({
         name: String,
-        dept: String,
+        dept: String
       });
-      UserSchema.plugin(autoIncrement, 'User');
-      const User = connection.model('User', UserSchema);
+      UserSchema.plugin(autoIncrement, "User");
+      const User = connection.model("User", UserSchema);
       await User.ensureIndexes();
 
-      const user1 = new User({ name: 'Charlie', dept: 'Support' });
-      const user2 = new User({ name: 'Charlene', dept: 'Marketing' });
+      const user1 = new User({ name: "Charlie", dept: "Support" });
+      const user2 = new User({ name: "Charlene", dept: "Marketing" });
 
       const count1 = await User.nextCount();
       await user1.save();
@@ -274,21 +291,21 @@ describe('mongoose-auto-increment', () => {
       expect(count3).toBe(2);
     });
 
-    it('with incrementor groups return the next count', async () => {
+    it("with incrementor groups return the next count", async () => {
       const UserSchema = new mongoose.Schema({
         name: String,
-        dept: String,
+        dept: String
       });
       UserSchema.plugin(autoIncrement, {
-        model: 'User',
-        field: 'userId',
-        groupingField: 'dept',
+        model: "User",
+        field: "userId",
+        groupingField: "dept"
       });
-      const User = connection.model('User', UserSchema);
+      const User = connection.model("User", UserSchema);
       await User.ensureIndexes();
 
-      const user1 = new User({ name: 'Charlie', dept: 'Support' });
-      const user2 = new User({ name: 'Charlene', dept: 'Marketing' });
+      const user1 = new User({ name: "Charlie", dept: "Support" });
+      const user2 = new User({ name: "Charlene", dept: "Marketing" });
 
       const count1 = await user1.nextCount();
       await user1.save();
@@ -304,17 +321,17 @@ describe('mongoose-auto-increment', () => {
     });
   });
 
-  describe('resetCount() helper function', () => {
-    it('should reset count via doc method', async () => {
+  describe("resetCount() helper function", () => {
+    it("should reset count via doc method", async () => {
       const UserSchema = new mongoose.Schema({
         name: String,
-        dept: String,
+        dept: String
       });
-      UserSchema.plugin(autoIncrement, 'User');
-      const User = connection.model('User', UserSchema);
+      UserSchema.plugin(autoIncrement, "User");
+      const User = connection.model("User", UserSchema);
       await User.ensureIndexes();
 
-      const user = new User({ name: 'Charlie', dept: 'Support' });
+      const user = new User({ name: "Charlie", dept: "Support" });
 
       await user.save();
       const nextCount1 = await user.nextCount();
@@ -327,16 +344,16 @@ describe('mongoose-auto-increment', () => {
       expect(nextCount2).toBe(0);
     });
 
-    it('should reset count via Model method', async () => {
+    it("should reset count via Model method", async () => {
       const UserSchema = new mongoose.Schema({
         name: String,
-        dept: String,
+        dept: String
       });
-      UserSchema.plugin(autoIncrement, 'User');
-      const User = connection.model('User', UserSchema);
+      UserSchema.plugin(autoIncrement, "User");
+      const User = connection.model("User", UserSchema);
       await User.ensureIndexes();
 
-      const user = new User({ name: 'Charlie', dept: 'Support' });
+      const user = new User({ name: "Charlie", dept: "Support" });
 
       await user.save();
       const nextCount1 = await user.nextCount();
@@ -350,21 +367,21 @@ describe('mongoose-auto-increment', () => {
     });
   });
 
-  it('with string field and output filter increment the counter value only once', async () => {
+  it("with string field and output filter increment the counter value only once", async () => {
     const UserSchema = new mongoose.Schema({
       orderNumber: Number,
       name: String,
-      dept: String,
+      dept: String
     });
     UserSchema.plugin(autoIncrement, {
-      model: 'User',
-      field: 'orderNumber',
-      outputFilter: value => value * 100,
+      model: "User",
+      field: "orderNumber",
+      outputFilter: value => value * 100
     });
-    const User = connection.model('User', UserSchema);
+    const User = connection.model("User", UserSchema);
     await User.ensureIndexes();
 
-    const user1 = new User({ name: 'Charlie', dept: 'Support' });
+    const user1 = new User({ name: "Charlie", dept: "Support" });
 
     await user1.validate();
     const initialId = user1.orderNumber;
@@ -373,47 +390,73 @@ describe('mongoose-auto-increment', () => {
     expect(user1.orderNumber).toBe(initialId);
   });
 
-  it('should fix old counter record without `groupingField`', async () => {
-    const _id = new mongoose.Types.ObjectId('100000000000000000000000');
-    const icCollectoion = connection.collection('identitycounters');
+  it("should fix old counter record without `groupingField`", async () => {
+    const _id = new mongoose.Types.ObjectId("100000000000000000000000");
+    const icCollectoion = connection.collection("identitycounters");
     await icCollectoion.ensureIndex(
       {
         field: 1,
         groupingField: 1,
-        model: 1,
+        model: 1
       },
       {
-        unique: true,
+        unique: true
       }
     );
     await icCollectoion.insert({
       _id,
-      model: 'User',
-      field: 'orderNumber',
-      count: 79,
+      model: "User",
+      field: "orderNumber",
+      count: 79
     });
 
     expect(await icCollectoion.find().toArray()).toEqual([
-      { _id, count: 79, field: 'orderNumber', model: 'User' },
+      { _id, count: 79, field: "orderNumber", model: "User" }
     ]);
 
     const UserSchema = new mongoose.Schema({
       orderNumber: Number,
       name: String,
-      dept: String,
+      dept: String
     });
     UserSchema.plugin(autoIncrement, {
-      model: 'User',
-      field: 'orderNumber',
+      model: "User",
+      field: "orderNumber"
     });
-    const User = connection.model('User', UserSchema);
+    const User = connection.model("User", UserSchema);
     await User.ensureIndexes();
 
-    const user1 = new User({ name: 'Charlie', dept: 'Support' });
+    const user1 = new User({ name: "Charlie", dept: "Support" });
     await user1.save();
 
     expect(await icCollectoion.find().toArray()).toEqual([
-      { _id, count: 80, field: 'orderNumber', model: 'User', groupingField: '' },
+      { _id, count: 80, field: "orderNumber", model: "User", groupingField: "" }
     ]);
+  });
+  fit("increment the counter in the right model and the right DB", async () => {
+    const UserSchema = new mongoose.Schema({
+      name: String,
+      dept: String
+    });
+    UserSchema.plugin(autoIncrement, "User");
+    const UserDB1 = connection.model("User", UserSchema);
+    const UserDB2 = connection1.model("User", UserSchema);
+    await UserDB1.ensureIndexes();
+    await UserDB2.ensureIndexes();
+
+    const DB1_user1 = new UserDB1({ name: "Charlie", dept: "Support" });
+    const DB1_user2 = new UserDB1({ name: "sam", dept: "Support" });
+    const DB2_user1 = new UserDB2({ name: "John", dept: "Marketing" });
+    const DB2_user2 = new UserDB2({ name: "Mat", dept: "Marketing" });
+
+    await DB1_user1.save();
+    await DB1_user2.save();
+    await DB2_user1.save();
+    await DB2_user2.save();
+    expect(DB1_user1.db.db.databaseName).toBe("test");
+    expect(DB2_user1.db.db.databaseName).toBe(dataBase1);
+    expect(DB1_user1._id).toBe(0);
+    expect(DB1_user2._id).toBe(1);
+    expect(DB2_user1._id).toBe(0);
   });
 });
