@@ -433,7 +433,7 @@ describe("mongoose-auto-increment", () => {
       { _id, count: 80, field: "orderNumber", model: "User", groupingField: "" }
     ]);
   });
-  fit("increment the counter in the right model and the right DB", async () => {
+  it("increment the counter in the right model and the right DB", async () => {
     const UserSchema = new mongoose.Schema({
       name: String,
       dept: String
@@ -445,18 +445,13 @@ describe("mongoose-auto-increment", () => {
     await UserDB2.ensureIndexes();
 
     const DB1_user1 = new UserDB1({ name: "Charlie", dept: "Support" });
-    const DB1_user2 = new UserDB1({ name: "sam", dept: "Support" });
     const DB2_user1 = new UserDB2({ name: "John", dept: "Marketing" });
-    const DB2_user2 = new UserDB2({ name: "Mat", dept: "Marketing" });
 
     await DB1_user1.save();
-    await DB1_user2.save();
     await DB2_user1.save();
-    await DB2_user2.save();
     expect(DB1_user1.db.db.databaseName).toBe("test");
     expect(DB2_user1.db.db.databaseName).toBe(dataBase1);
     expect(DB1_user1._id).toBe(0);
-    expect(DB1_user2._id).toBe(1);
     expect(DB2_user1._id).toBe(0);
   });
 });

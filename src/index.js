@@ -236,9 +236,9 @@ export function autoIncrement(
 
   let _IC_: IdentityCounterModel;
   function getIC(connection: MongooseConnection) {
-    if (!_IC_) {
+    // if (!_IC_) {
       _IC_ = initIdentityCounter(connection);
-    }
+    // }
     return _IC_;
   }
 
